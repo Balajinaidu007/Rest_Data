@@ -2,17 +2,19 @@ package com.vertex;
 
 import java.util.Arrays;
 import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.Map;
 
-import com.google.gson.JsonArray;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
-
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/vertex")
@@ -24,45 +26,30 @@ public class VertexController {
     }
 
     @PostMapping("/export")
-    public ResponseEntity<?> exportDataToVertexEnv(HttpServletRequest request, @RequestBody String inputData) {
+    public ResponseEntity<?> exportDataToVertexEnv(@RequestBody ExportRequest inputData) {
         try {
 
-            JsonObject jsonInput = JsonParser.parseString(inputData).getAsJsonObject();
-
-            JsonObject dataObj = jsonInput.getAsJsonObject("Data");
-            JsonObject rootObj = dataObj.getAsJsonObject("Root");
-            JsonArray totalIds = dataObj.getAsJsonArray("TotalIds");
-            JsonArray optionalIds = dataObj.getAsJsonArray("OptionalIds");
-
-            String rootId = rootObj.get("id").getAsString();
+            String rootId = inputData.getData().getRoot().getId();
             System.out.println("Processing Export for Root ID: " + rootId);
 
-            for (int i = 0; i < totalIds.size(); i++) {
-                String currentId = totalIds.get(i).getAsString();
+            for (String currentId : inputData.getData().getTotalIds()) {
                 System.out.println("current processing ID ---------------->" + currentId);
             }
 
-            for (int i = 0; i < optionalIds.size(); i++) {
-                String currentoptId = optionalIds.get(i).getAsString();
+            for (String currentoptId : inputData.getData().getOptionalIds()) {
                 System.out.println("------------------------------------------------------------------");
                 System.out.println("current OptionalId processing ID ---------------->" + currentoptId);
                 System.out.println("------------------------------------------------------------------");
             }
 
-            JsonObject response = new JsonObject();
-            response.addProperty("status", "success");
-            response.addProperty("message", "Exported " + totalIds.size() + " items");
-            
-            printRequestDetails(request);
+            Map<String, Object> response = new HashMap<>();
+            response.put("status", "success");
+            response.put("message", "Exported " + inputData.getData().getTotalIds().size() + " items");
 
-            return ResponseEntity.ok(response.toString());
+            return ResponseEntity.ok(response);
 
         } catch (Exception e) {
-
-            JsonObject error = new JsonObject();
-            error.addProperty("error", e.getMessage());
-
-            return ResponseEntity.internalServerError().body(error.toString());
+            return ResponseEntity.internalServerError().body(e.getMessage());
         }
     }
 
